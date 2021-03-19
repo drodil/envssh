@@ -21,6 +21,7 @@ type Client struct {
 
 func Connect(network string, address string, config *ssh.ClientConfig) (*Client, error) {
 	config.HostKeyCallback = checkHostKey
+	// TODO: Use some struct for host/port combination
 	if !strings.Contains(address, ":") {
 		address = address + ":22"
 	}
@@ -38,7 +39,10 @@ func (client *Client) Disconnect() error {
 	return client.sshClient.Close()
 }
 
+// TODO: Add support for private key authentication
+
 func ConnectWithPassword(address string, username string, password string) (*Client, error) {
+	// TODO: Use RetryableAuthMethod and KeyboardInteractiveChallenge instead password parameter
     config := &ssh.ClientConfig{
         User: username,
         Auth: []ssh.AuthMethod{
