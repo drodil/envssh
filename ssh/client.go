@@ -8,18 +8,18 @@ import (
 	"log"
 	"net"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"strings"
 
 	"github.com/drodil/envssh/util"
-	"github.com/shiena/ansicolor"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 type Client struct {
 	sshClient    *ssh.Client
 	envVariables map[string]string
+	address      string
 }
 
 // Connects to remote with given network, address and client configuration.
@@ -38,6 +38,7 @@ func Connect(network string, address string, config *ssh.ClientConfig) (*Client,
 	return &Client{
 		sshClient:    client,
 		envVariables: make(map[string]string),
+        address:      address,
 	}, nil
 }
 
@@ -61,6 +62,7 @@ func ConnectWithPassword(address string, username string) (*Client, error) {
 
 // Disconnects the client.
 func (client *Client) Disconnect() error {
+    fmt.Println("Connection to", client.address, "closed.")
 	return client.sshClient.Close()
 }
 
@@ -117,47 +119,50 @@ func (client *Client) StartInteractiveSession() error {
 		session.Setenv(name, value)
 	}
 
-	session.Stdout = ansicolor.NewAnsiColorWriter(os.Stdout)
-	session.Stderr = ansicolor.NewAnsiColorWriter(os.Stderr)
-	in, _ := session.StdinPipe()
-
 	// TODO: Check modes
 	modes := ssh.TerminalModes{
-		ssh.ECHO:  0,
-		ssh.IGNCR: 1,
+		ssh.ECHO: 1,
+	}
+
+	fd := int(os.Stdin.Fd())
+	state, err := terminal.MakeRaw(fd)
+	if err != nil {
+		return err
+	}
+	defer terminal.Restore(fd, state)
+
+	w, h, err := terminal.GetSize(fd)
+	if err != nil {
+		return err
+	}
+
+	term := os.Getenv("TERM")
+	if term == "" {
+		term = "xterm-256color"
 	}
 
 	// TODO: Get size of the Pty from current terminal
-	if err := session.RequestPty("vt100", 80, 40, modes); err != nil {
+	if err := session.RequestPty(term, w, h, modes); err != nil {
 		// TODO: Fallback another PTY?
 		return err
 	}
+
+	session.Stdout = os.Stdout
+	session.Stderr = os.Stderr
+	session.Stdin = os.Stdin
 
 	if err := session.Shell(); err != nil {
 		return err
 	}
 
-	// CTRL + C
-	// TODO: Handler more signals
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for {
-			<-c
-			fmt.Println("^C")
-			fmt.Fprint(in, "\n")
+	if err := session.Wait(); err != nil {
+		if e, ok := err.(*ssh.ExitError); ok {
+			switch e.ExitStatus() {
+			case 130:
+				return nil
+			}
 		}
-	}()
-
-	for {
-		reader := bufio.NewReader(os.Stdin)
-		str, _ := reader.ReadString('\n')
-		_, err := fmt.Fprint(in, str)
-		// TODO: This continues correctly after server has disconnected session BUT
-		// requires extra input from user.. Maybe use goroutine to check this?
-		if err != nil {
-			break
-		}
+		return err
 	}
 
 	return nil
