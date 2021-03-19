@@ -12,6 +12,7 @@ import (
 	"encoding/base64"
 
 	"golang.org/x/crypto/ssh"
+	"github.com/drodil/envssh/util"
 )
 
 type Client struct {
@@ -117,16 +118,9 @@ func checkHostKey(hostname string, remote net.Addr, key ssh.PublicKey) error {
 	hostKey := getHostKey(hostnameWithoutPort)
 	if hostKey == nil {
 		fingerprint := ssh.FingerprintSHA256(key)
-		// TODO: Move the prompt to utils or use some existing component
 		fmt.Print("The authenticity of host '", hostnameWithoutPort, " (", remoteWithoutPort, ")' can't be established.\n")
 		fmt.Print("ECDSA key fingerprint is ", fingerprint, "\n")
-		fmt.Println("Are you sure you want to continue connecting (yes/no)?")
-		buf := bufio.NewReader(os.Stdin)
-		answer, err := buf.ReadString('\n')
-		if err != nil {
-			return err
-		}
-		answer = strings.Replace(answer, "\n", "", -1)
+		answer := util.PromptAllowedString("Are you sure you want to continue connecting (yes/no)?", []string{"yes", "no"}, "no")
 		if strings.Compare("yes", answer) != 0 {
 			return errors.New("Host key verification failed.")
 		}
