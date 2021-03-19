@@ -8,23 +8,22 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
 
 	"github.com/drodil/envssh/util"
+	"github.com/shiena/ansicolor"
 	"golang.org/x/crypto/ssh"
 )
 
 type Client struct {
-	sshClient *ssh.Client
+	sshClient  *ssh.Client
+	sshSession *ssh.Session
 }
 
 func Connect(network string, address string, config *ssh.ClientConfig) (*Client, error) {
 	config.HostKeyCallback = checkHostKey
-	// TODO: Figure out if it's possible to show banner before authentication
-	// ---> maybe only with additional connection without any auth methods (?)
-	// and ignoring errors
-	config.BannerCallback = ssh.BannerDisplayStderr()
 	// TODO: Use some struct for host/port combination
 	if !strings.Contains(address, ":") {
 		address = address + ":22"
@@ -34,12 +33,21 @@ func Connect(network string, address string, config *ssh.ClientConfig) (*Client,
 	if err != nil {
 		return nil, err
 	}
+
+	session, err := client.NewSession()
+	if err != nil {
+		return nil, err
+	}
+
 	return &Client{
-		sshClient: client,
+		sshClient:  client,
+		sshSession: session,
 	}, nil
 }
 
 // TODO: Add support for private key authentication
+// TODO: Add support for SSHAgent
+// TODO: Add support for auto connect with first available AuthMethod (sshagent, key, password)
 
 func ConnectWithPassword(address string, username string) (*Client, error) {
 	// TODO: Add support to retry password input
@@ -55,19 +63,16 @@ func ConnectWithPassword(address string, username string) (*Client, error) {
 }
 
 func (client *Client) Disconnect() error {
+	client.sshSession.Close()
 	return client.sshClient.Close()
 }
 
 func (client *Client) RunCommand(cmd string) error {
-	session, err := client.sshClient.NewSession()
-	// TODO: Handle stdOut, stdErr, preferably to log file instead io.Stdout for remote command running
-	if err != nil {
+	// TODO: Use session.CombinedOutput for error code ?
+	if err := client.sshSession.Run(cmd); err != nil {
 		return err
 	}
-	defer session.Close()
-	if err := session.Run(cmd); err != nil {
-		return err
-	}
+
 	return nil
 }
 
@@ -81,6 +86,57 @@ func (client *Client) CopyFileFromRemote(remoteFile string, localFile string) er
 	// TODO: Find a better way to do this. But not with SCP command.
 	cmd := fmt.Sprint("\"cat ", remoteFile, "\" > ", localFile)
 	return client.RunCommand(cmd)
+}
+
+func (client *Client) SetRemoteEnv(name string, value string) error {
+	return client.sshSession.Setenv(name, value)
+}
+
+func (client *Client) StartInteractiveSession() error {
+	client.sshSession.Stdout = ansicolor.NewAnsiColorWriter(os.Stdout)
+	client.sshSession.Stderr = ansicolor.NewAnsiColorWriter(os.Stderr)
+	in, _ := client.sshSession.StdinPipe()
+
+	// TODO: Check modes
+	modes := ssh.TerminalModes{
+		ssh.ECHO:  0,
+		ssh.IGNCR: 1,
+	}
+
+	// TODO: Get size of the Pty from current terminal
+	if err := client.sshSession.RequestPty("vt100", 80, 40, modes); err != nil {
+		// TODO: Fallback another PTY?
+		return err
+	}
+
+	if err := client.sshSession.Shell(); err != nil {
+		return err
+	}
+
+	// CTRL + C
+	// TODO: Handler more signals
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for {
+			<-c
+			fmt.Println("^C")
+			fmt.Fprint(in, "\n")
+		}
+	}()
+
+	for {
+		reader := bufio.NewReader(os.Stdin)
+		str, _ := reader.ReadString('\n')
+		_, err := fmt.Fprint(in, str)
+		// TODO: This continues correctly after server has disconnected session BUT
+		// requires extra input from user.. Maybe use goroutine to check this?
+		if err != nil {
+			break
+		}
+	}
+
+	return nil
 }
 
 // TODO: Check if this could be replaced with https://pkg.go.dev/golang.org/x/crypto/ssh/knownhosts

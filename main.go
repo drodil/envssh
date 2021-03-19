@@ -24,7 +24,10 @@ func main() {
 		panic(err)
 	}
 
-	client.RunCommand("ls -la")
+	err = client.StartInteractiveSession()
+	if err != nil {
+		panic(err)
+	}
 	client.Disconnect()
 }
 
