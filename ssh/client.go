@@ -39,10 +39,6 @@ func Connect(network string, address string, config *ssh.ClientConfig) (*Client,
 	}, nil
 }
 
-func (client *Client) Disconnect() error {
-	return client.sshClient.Close()
-}
-
 // TODO: Add support for private key authentication
 
 func ConnectWithPassword(address string, username string) (*Client, error) {
@@ -56,6 +52,35 @@ func ConnectWithPassword(address string, username string) (*Client, error) {
 		},
 	}
 	return Connect("tcp", address, config)
+}
+
+func (client *Client) Disconnect() error {
+	return client.sshClient.Close()
+}
+
+func (client *Client) RunCommand(cmd string) error {
+	session, err := client.sshClient.NewSession()
+	// TODO: Handle stdOut, stdErr, preferably to log file instead io.Stdout for remote command running
+	if err != nil {
+		return err
+	}
+	defer session.Close()
+	if err := session.Run(cmd); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (client *Client) CopyFileToRemote(localFile string, remoteFile string) error {
+	// TODO: Find a better way to do this. But not with SCP command.
+	cmd := fmt.Sprint("\"cat > ", remoteFile, "\" < ", localFile)
+	return client.RunCommand(cmd)
+}
+
+func (client *Client) CopyFileFromRemote(remoteFile string, localFile string) error {
+	// TODO: Find a better way to do this. But not with SCP command.
+	cmd := fmt.Sprint("\"cat ", remoteFile, "\" > ", localFile)
+	return client.RunCommand(cmd)
 }
 
 // TODO: Check if this could be replaced with https://pkg.go.dev/golang.org/x/crypto/ssh/knownhosts

@@ -24,6 +24,7 @@ func main() {
 		panic(err)
 	}
 
+	client.RunCommand("ls -la")
 	client.Disconnect()
 }
 
