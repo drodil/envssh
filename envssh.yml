@@ -1,0 +1,16 @@
+global:
+  env:
+    static:
+      LC_ENVSSH: "1"
+    moved:
+    - LANG
+    - EDITOR
+    - VISUAL
+servers:
+- host: localhost
+  port: 22
+  env:
+    static:
+      LC_ENVSSH: "2"
+    moved:
+    - LANGUAGE

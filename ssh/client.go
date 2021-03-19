@@ -117,6 +117,9 @@ func (client *Client) StartInteractiveSession() error {
 		return err
 	}
 
+	// TODO: This only works for env variables that are listed in
+	// sshd_config AcceptEnv. Maybe if pushing these as export after
+	// connecting could allow setting other env variables as well
 	for name, value := range client.envVariables {
 		session.Setenv(name, value)
 	}
