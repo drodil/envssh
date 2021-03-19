@@ -21,6 +21,10 @@ type Client struct {
 
 func Connect(network string, address string, config *ssh.ClientConfig) (*Client, error) {
 	config.HostKeyCallback = checkHostKey
+	// TODO: Figure out if it's possible to show banner before authentication
+	// ---> maybe only with additional connection without any auth methods (?)
+	// and ignoring errors
+	config.BannerCallback = ssh.BannerDisplayStderr()
 	// TODO: Use some struct for host/port combination
 	if !strings.Contains(address, ":") {
 		address = address + ":22"
@@ -41,8 +45,10 @@ func (client *Client) Disconnect() error {
 
 // TODO: Add support for private key authentication
 
-func ConnectWithPassword(address string, username string, password string) (*Client, error) {
-	// TODO: Use RetryableAuthMethod and KeyboardInteractiveChallenge instead password parameter
+func ConnectWithPassword(address string, username string) (*Client, error) {
+	// TODO: Add support to retry password input
+	question := fmt.Sprint(username, "@", address, "'s password:")
+	password := util.PromptPassword(question)
 	config := &ssh.ClientConfig{
 		User: username,
 		Auth: []ssh.AuthMethod{
@@ -52,6 +58,7 @@ func ConnectWithPassword(address string, username string, password string) (*Cli
 	return Connect("tcp", address, config)
 }
 
+// TODO: Check if this could be replaced with https://pkg.go.dev/golang.org/x/crypto/ssh/knownhosts
 func getKnownHosts(flag int, perm os.FileMode) (*os.File, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -67,6 +74,7 @@ func getKnownHosts(flag int, perm os.FileMode) (*os.File, error) {
 	return file, nil
 }
 
+// TODO: Check if this could be replaced with https://pkg.go.dev/golang.org/x/crypto/ssh/knownhosts
 func getHostKey(address string) ssh.PublicKey {
 	file, err := getKnownHosts(os.O_RDONLY, 0744)
 
@@ -97,6 +105,7 @@ func getHostKey(address string) ssh.PublicKey {
 	return hostKey
 }
 
+// TODO: Check if this could be replaced with https://pkg.go.dev/golang.org/x/crypto/ssh/knownhosts
 func addHostKey(address string, key ssh.PublicKey) error {
 	file, err := getKnownHosts(os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0744)
 
@@ -116,6 +125,7 @@ func addHostKey(address string, key ssh.PublicKey) error {
 	return nil
 }
 
+// TODO: Check if this could be replaced with https://pkg.go.dev/golang.org/x/crypto/ssh/knownhosts
 func checkHostKey(hostname string, remote net.Addr, key ssh.PublicKey) error {
 	hostnameWithoutPort := strings.Split(hostname, ":")[0]
 	remoteWithoutPort := strings.Split(remote.String(), ":")[0]

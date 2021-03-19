@@ -19,7 +19,7 @@ func main() {
 		return
 	}
 
-	client, err := ssh.ConnectWithPassword(destination, *username, "password")
+	client, err := ssh.ConnectWithPassword(destination, *username)
 	if err != nil {
 		panic(err)
 	}

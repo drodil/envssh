@@ -3,8 +3,10 @@ package util
 import (
 	"bufio"
 	"fmt"
+	"golang.org/x/crypto/ssh/terminal"
 	"os"
 	"strings"
+	"syscall"
 )
 
 func StringInSlice(a string, list []string) bool {
@@ -42,4 +44,20 @@ func PromptAllowedString(question string, allowed []string, def string) string {
 	}
 
 	return answer
+}
+
+func PromptPassword(question string) string {
+	fmt.Print(question, " ")
+	stdIn := int(syscall.Stdin)
+	state, _ := terminal.GetState(stdIn)
+	defer terminal.Restore(stdIn, state)
+
+	bytePassword, err := terminal.ReadPassword(stdIn)
+	fmt.Print("\n")
+	if err != nil {
+		return ""
+	}
+
+	password := string(bytePassword)
+	return strings.TrimSpace(password)
 }
