@@ -2,36 +2,36 @@ package main
 
 import (
 	"flag"
-	"os/user"
 	"github.com/drodil/envssh/ssh"
+	"os/user"
 )
 
 func main() {
 
-    username := flag.String("l", getUsername(), "Login username")
+	username := flag.String("l", getUsername(), "Login username")
 
-    flag.Parse()
+	flag.Parse()
 
-    destination := flag.Arg(0)
+	destination := flag.Arg(0)
 
-    if destination == "" {
-        flag.Usage()
-        return
-    }
+	if destination == "" {
+		flag.Usage()
+		return
+	}
 
-    client, err := ssh.ConnectWithPassword(destination, *username, "password")
-    if err != nil {
-        panic(err)
-    }
+	client, err := ssh.ConnectWithPassword(destination, *username, "password")
+	if err != nil {
+		panic(err)
+	}
 
-    client.Disconnect()
+	client.Disconnect()
 }
 
 // TODO: Move to utils
 func getUsername() string {
-    user, err := user.Current()
-    if err != nil {
-        return ""
-    }
-    return user.Username
+	user, err := user.Current()
+	if err != nil {
+		return ""
+	}
+	return user.Username
 }

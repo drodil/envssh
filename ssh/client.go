@@ -2,6 +2,7 @@ package ssh
 
 import (
 	"bufio"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
@@ -9,14 +10,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"encoding/base64"
 
-	"golang.org/x/crypto/ssh"
 	"github.com/drodil/envssh/util"
+	"golang.org/x/crypto/ssh"
 )
 
 type Client struct {
-    sshClient *ssh.Client
+	sshClient *ssh.Client
 }
 
 func Connect(network string, address string, config *ssh.ClientConfig) (*Client, error) {
@@ -43,13 +43,13 @@ func (client *Client) Disconnect() error {
 
 func ConnectWithPassword(address string, username string, password string) (*Client, error) {
 	// TODO: Use RetryableAuthMethod and KeyboardInteractiveChallenge instead password parameter
-    config := &ssh.ClientConfig{
-        User: username,
-        Auth: []ssh.AuthMethod{
-               ssh.Password(password),
-        },
-    }
-    return Connect("tcp", address, config)
+	config := &ssh.ClientConfig{
+		User: username,
+		Auth: []ssh.AuthMethod{
+			ssh.Password(password),
+		},
+	}
+	return Connect("tcp", address, config)
 }
 
 func getKnownHosts(flag int, perm os.FileMode) (*os.File, error) {
