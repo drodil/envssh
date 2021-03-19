@@ -66,6 +66,7 @@ func (client *Client) Disconnect() error {
 
 // Runs single command in the remote.
 func (client *Client) RunCommand(cmd string) error {
+	// TODO: Might require STD mapping? Test this plz.
 	session, err := client.sshClient.NewSession()
 	if err != nil {
 		return err
