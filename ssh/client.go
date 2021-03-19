@@ -18,10 +18,11 @@ import (
 )
 
 type Client struct {
-	sshClient  *ssh.Client
-	sshSession *ssh.Session
+	sshClient    *ssh.Client
+	envVariables map[string]string
 }
 
+// Connects to remote with given network, address and client configuration.
 func Connect(network string, address string, config *ssh.ClientConfig) (*Client, error) {
 	config.HostKeyCallback = checkHostKey
 	// TODO: Use some struct for host/port combination
@@ -34,14 +35,9 @@ func Connect(network string, address string, config *ssh.ClientConfig) (*Client,
 		return nil, err
 	}
 
-	session, err := client.NewSession()
-	if err != nil {
-		return nil, err
-	}
-
 	return &Client{
-		sshClient:  client,
-		sshSession: session,
+		sshClient:    client,
+		envVariables: make(map[string]string),
 	}, nil
 }
 
@@ -49,6 +45,7 @@ func Connect(network string, address string, config *ssh.ClientConfig) (*Client,
 // TODO: Add support for SSHAgent
 // TODO: Add support for auto connect with first available AuthMethod (sshagent, key, password)
 
+// Connects to the remote with given username. Prompts user for password.
 func ConnectWithPassword(address string, username string) (*Client, error) {
 	// TODO: Add support to retry password input
 	question := fmt.Sprint(username, "@", address, "'s password:")
@@ -62,40 +59,66 @@ func ConnectWithPassword(address string, username string) (*Client, error) {
 	return Connect("tcp", address, config)
 }
 
+// Disconnects the client.
 func (client *Client) Disconnect() error {
-	client.sshSession.Close()
 	return client.sshClient.Close()
 }
 
+// Runs single command in the remote.
 func (client *Client) RunCommand(cmd string) error {
+	session, err := client.sshClient.NewSession()
+	if err != nil {
+		return err
+	}
+
 	// TODO: Use session.CombinedOutput for error code ?
-	if err := client.sshSession.Run(cmd); err != nil {
+	if err := session.Run(cmd); err != nil {
 		return err
 	}
 
 	return nil
 }
 
+// Moves file in remote from location to another.
+func (client *Client) MoveFileAtRemote(from string, to string) error {
+	cmd := fmt.Sprint("mv ", from, " ", to)
+	return client.RunCommand(cmd)
+}
+
+// Copies local file to remote over SSH.
 func (client *Client) CopyFileToRemote(localFile string, remoteFile string) error {
 	// TODO: Find a better way to do this. But not with SCP command.
 	cmd := fmt.Sprint("\"cat > ", remoteFile, "\" < ", localFile)
 	return client.RunCommand(cmd)
 }
 
+// Copies file from the remote to local over SSH.
 func (client *Client) CopyFileFromRemote(remoteFile string, localFile string) error {
 	// TODO: Find a better way to do this. But not with SCP command.
 	cmd := fmt.Sprint("\"cat ", remoteFile, "\" > ", localFile)
 	return client.RunCommand(cmd)
 }
 
-func (client *Client) SetRemoteEnv(name string, value string) error {
-	return client.sshSession.Setenv(name, value)
+// Sets remote environment variable that will be set when
+// interactive session is started with StartInteractiveSession.
+func (client *Client) SetRemoteEnv(name string, value string) {
+	client.envVariables[name] = value
 }
 
+// Starts interactive session with the remote.
 func (client *Client) StartInteractiveSession() error {
-	client.sshSession.Stdout = ansicolor.NewAnsiColorWriter(os.Stdout)
-	client.sshSession.Stderr = ansicolor.NewAnsiColorWriter(os.Stderr)
-	in, _ := client.sshSession.StdinPipe()
+	session, err := client.sshClient.NewSession()
+	if err != nil {
+		return err
+	}
+
+	for name, value := range client.envVariables {
+		session.Setenv(name, value)
+	}
+
+	session.Stdout = ansicolor.NewAnsiColorWriter(os.Stdout)
+	session.Stderr = ansicolor.NewAnsiColorWriter(os.Stderr)
+	in, _ := session.StdinPipe()
 
 	// TODO: Check modes
 	modes := ssh.TerminalModes{
@@ -104,12 +127,12 @@ func (client *Client) StartInteractiveSession() error {
 	}
 
 	// TODO: Get size of the Pty from current terminal
-	if err := client.sshSession.RequestPty("vt100", 80, 40, modes); err != nil {
+	if err := session.RequestPty("vt100", 80, 40, modes); err != nil {
 		// TODO: Fallback another PTY?
 		return err
 	}
 
-	if err := client.sshSession.Shell(); err != nil {
+	if err := session.Shell(); err != nil {
 		return err
 	}
 
