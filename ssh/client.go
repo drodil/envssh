@@ -8,8 +8,10 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/drodil/envssh/util"
 	"golang.org/x/crypto/ssh"
@@ -38,7 +40,7 @@ func Connect(network string, address string, config *ssh.ClientConfig) (*Client,
 	return &Client{
 		sshClient:    client,
 		envVariables: make(map[string]string),
-        address:      address,
+		address:      address,
 	}, nil
 }
 
@@ -62,7 +64,7 @@ func ConnectWithPassword(address string, username string) (*Client, error) {
 
 // Disconnects the client.
 func (client *Client) Disconnect() error {
-    fmt.Println("Connection to", client.address, "closed.")
+	fmt.Println("Connection to", client.address, "closed.")
 	return client.sshClient.Close()
 }
 
@@ -141,8 +143,7 @@ func (client *Client) StartInteractiveSession() error {
 		term = "xterm-256color"
 	}
 
-	// TODO: Get size of the Pty from current terminal
-	if err := session.RequestPty(term, w, h, modes); err != nil {
+	if err := session.RequestPty(term, h, w, modes); err != nil {
 		// TODO: Fallback another PTY?
 		return err
 	}
@@ -154,6 +155,22 @@ func (client *Client) StartInteractiveSession() error {
 	if err := session.Shell(); err != nil {
 		return err
 	}
+
+	// Handle resize
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGWINCH)
+	go func() {
+		for {
+			s := <-ch
+			switch s {
+			case syscall.SIGWINCH:
+				w, h, err = terminal.GetSize(fd)
+				if err == nil {
+					session.WindowChange(h, w)
+				}
+			}
+		}
+	}()
 
 	if err := session.Wait(); err != nil {
 		if e, ok := err.(*ssh.ExitError); ok {
