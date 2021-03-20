@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
+	"os"
+
 	"github.com/drodil/envssh/config"
 	"github.com/drodil/envssh/ssh"
 	"github.com/drodil/envssh/util"
-	"os"
 )
 
 func main() {
@@ -16,6 +17,10 @@ func main() {
 	flag.Parse()
 
 	destination := flag.Arg(0)
+	remote := ssh.ParseRemote(destination)
+	if remote.Username == "" {
+		remote.Username = *username
+	}
 
 	if destination == "" {
 		flag.Usage()
@@ -27,7 +32,7 @@ func main() {
 		panic(err)
 	}
 
-	client, err := ssh.ConnectWithPassword(destination, *username)
+	client, err := ssh.ConnectWithPassword(remote)
 	if err != nil {
 		panic(err)
 	}

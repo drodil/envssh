@@ -20,18 +20,14 @@ import (
 type Client struct {
 	sshClient    *ssh.Client
 	envVariables map[string]string
-	address      string
+	remote       Remote
 }
 
 // Connects to remote with given network, address and client configuration.
-func Connect(network string, address string, config *ssh.ClientConfig) (*Client, error) {
+func Connect(network string, remoteAddr *Remote, config *ssh.ClientConfig) (*Client, error) {
 	config.HostKeyCallback = checkHostKey
-	// TODO: Use some struct for host/port combination
-	if !strings.Contains(address, ":") {
-		address = address + ":22"
-	}
 
-	client, err := ssh.Dial(network, address, config)
+	client, err := ssh.Dial(network, remoteAddr.ToAddress(), config)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +35,7 @@ func Connect(network string, address string, config *ssh.ClientConfig) (*Client,
 	return &Client{
 		sshClient:    client,
 		envVariables: make(map[string]string),
-		address:      address,
+		remote:       *remoteAddr,
 	}, nil
 }
 
@@ -48,22 +44,22 @@ func Connect(network string, address string, config *ssh.ClientConfig) (*Client,
 // TODO: Add support for auto connect with first available AuthMethod (sshagent, key, password)
 
 // Connects to the remote with given username. Prompts user for password.
-func ConnectWithPassword(address string, username string) (*Client, error) {
+func ConnectWithPassword(remote *Remote) (*Client, error) {
 	// TODO: Add support to retry password input
-	question := fmt.Sprint(username, "@", address, "'s password:")
+	question := fmt.Sprint(remote.Username, "@", remote.Hostname, "'s password:")
 	password := util.PromptPassword(question)
 	config := &ssh.ClientConfig{
-		User: username,
+		User: remote.Username,
 		Auth: []ssh.AuthMethod{
 			ssh.Password(password),
 		},
 	}
-	return Connect("tcp", address, config)
+	return Connect("tcp", remote, config)
 }
 
 // Disconnects the client.
 func (client *Client) Disconnect() error {
-	fmt.Println("Connection to", client.address, "closed.")
+	fmt.Println("Connection to", client.remote.Hostname, "closed.")
 	return client.sshClient.Close()
 }
 
