@@ -11,7 +11,6 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"github.com/drodil/envssh/util"
 	"golang.org/x/crypto/ssh"
@@ -129,7 +128,7 @@ func (client *Client) StartInteractiveSession() error {
 		ssh.ECHO: 1,
 	}
 
-	fd := int(os.Stdin.Fd())
+	fd := int(Fd)
 	state, err := terminal.MakeRaw(fd)
 	if err != nil {
 		return err
@@ -138,7 +137,9 @@ func (client *Client) StartInteractiveSession() error {
 
 	w, h, err := terminal.GetSize(fd)
 	if err != nil {
-		return err
+		// Default to 80x24
+		w = 80
+		h = 24
 	}
 
 	term := os.Getenv("TERM")
@@ -159,14 +160,14 @@ func (client *Client) StartInteractiveSession() error {
 		return err
 	}
 
-	// Handle resize
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGWINCH)
+	// // Handle resize
+	ch := make(chan os.Signal, 0)
+	signal.Notify(ch, ResizeEvent)
 	go func() {
 		for {
 			s := <-ch
 			switch s {
-			case syscall.SIGWINCH:
+			case ResizeEvent:
 				w, h, err = terminal.GetSize(fd)
 				if err == nil {
 					session.WindowChange(h, w)
@@ -249,7 +250,8 @@ func addHostKey(address string, key ssh.PublicKey) error {
 	encoded := base64.StdEncoding.EncodeToString(key.Marshal())
 	entry := fmt.Sprintln(address, key.Type(), encoded)
 	if _, err := file.WriteString(entry); err != nil {
-		return nil
+		log.Fatal(err)
+		return err
 	}
 
 	return nil

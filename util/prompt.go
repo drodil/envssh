@@ -3,10 +3,11 @@ package util
 import (
 	"bufio"
 	"fmt"
-	"golang.org/x/crypto/ssh/terminal"
 	"os"
 	"strings"
 	"syscall"
+
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func StringInSlice(a string, list []string) bool {
@@ -29,7 +30,7 @@ func PromptAllowedString(question string, allowed []string, def string) string {
 		if err != nil {
 			continue
 		}
-		answer = strings.Replace(answer, "\n", "", -1)
+		answer = strings.Replace(strings.Replace(answer, "\r", "", -1), "\n", "", -1)
 		if len(answer) == 0 {
 			answer = def
 			break
@@ -39,7 +40,7 @@ func PromptAllowedString(question string, allowed []string, def string) string {
 			allowedStr := strings.Join(allowed, "', ")
 			question = fmt.Sprint("Please type '", allowedStr, "':")
 		}
-		answer = strings.Replace(answer, "\n", "", -1)
+		answer = strings.Replace(strings.Replace(answer, "\r", "", -1), "\n", "", -1)
 		break
 	}
 
