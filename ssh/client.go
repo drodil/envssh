@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/signal"
@@ -23,10 +23,13 @@ type Client struct {
 	remote       *util.Remote
 }
 
+var logger = util.GetLogger()
+
 // Connects to remote with given network, address and client configuration.
 func Connect(network string, remoteAddr *util.Remote, config *ssh.ClientConfig) (*Client, error) {
 	config.HostKeyCallback = checkHostKey
 
+	logger.Println("Connecting to", remoteAddr.ToAddress())
 	client, err := ssh.Dial(network, remoteAddr.ToAddress(), config)
 	if err != nil {
 		return nil, err
@@ -65,13 +68,13 @@ func (client *Client) Disconnect() error {
 
 // Runs single command in the remote.
 func (client *Client) RunCommand(cmd string) error {
-	// TODO: Might require STD mapping? Test this plz.
+	// TODO: Add support for STDOUT/STDERR
 	session, err := client.sshClient.NewSession()
 	if err != nil {
 		return err
 	}
 
-	// TODO: Use session.CombinedOutput for error code ?
+	logger.Println("Running command on remote {}", cmd)
 	if err := session.Run(cmd); err != nil {
 		return err
 	}
@@ -88,13 +91,26 @@ func (client *Client) MoveFileAtRemote(from string, to string) error {
 // Copies local file to remote over SSH.
 func (client *Client) CopyFileToRemote(localFile string, remoteFile string) error {
 	// TODO: Find a better way to do this. But not with SCP command.
-	cmd := fmt.Sprint("\"cat > ", remoteFile, "\" < ", localFile)
+	f, err := os.Open(localFile)
+	if err != nil {
+		return err
+	}
+
+	reader := bufio.NewReader(f)
+	content, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+	encoded := base64.StdEncoding.EncodeToString(content)
+
+	cmd := fmt.Sprint("echo '", encoded, "' | base64 --decode > ", remoteFile)
 	return client.RunCommand(cmd)
 }
 
 // Copies file from the remote to local over SSH.
 func (client *Client) CopyFileFromRemote(remoteFile string, localFile string) error {
 	// TODO: Find a better way to do this. But not with SCP command.
+	// TODO: This actually won't work. Maybe base64 as first step here but needs stdout from remote.
 	cmd := fmt.Sprint("\"cat ", remoteFile, "\" > ", localFile)
 	return client.RunCommand(cmd)
 }
@@ -164,7 +180,7 @@ func (client *Client) StartInteractiveSession() error {
 		return err
 	}
 
-	// // Handle resize
+	// Handle resize
 	ch := make(chan os.Signal, 0)
 	signal.Notify(ch, ResizeEvent)
 	go func() {
@@ -214,7 +230,6 @@ func getHostKey(address string) ssh.PublicKey {
 	file, err := getKnownHosts(os.O_RDONLY, 0744)
 
 	if err != nil {
-		log.Fatal(err)
 		return nil
 	}
 
@@ -231,7 +246,7 @@ func getHostKey(address string) ssh.PublicKey {
 			var err error
 			hostKey, _, _, _, err = ssh.ParseAuthorizedKey(scanner.Bytes())
 			if err != nil {
-				log.Fatalf("error parsing %q: %v", fields[2], err)
+				logger.Fatalf("error parsing %q: %v", fields[2], err)
 			}
 			break
 		}
@@ -245,7 +260,6 @@ func addHostKey(address string, key ssh.PublicKey) error {
 	file, err := getKnownHosts(os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0744)
 
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
@@ -254,7 +268,6 @@ func addHostKey(address string, key ssh.PublicKey) error {
 	encoded := base64.StdEncoding.EncodeToString(key.Marshal())
 	entry := fmt.Sprintln(address, key.Type(), encoded)
 	if _, err := file.WriteString(entry); err != nil {
-		log.Fatal(err)
 		return err
 	}
 

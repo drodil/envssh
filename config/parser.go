@@ -56,6 +56,7 @@ func CreateDefaultConfigFile(location string) error {
 				Static: map[string]string{"LC_ENVSSH": "1"},
 				Moved:  []string{"LANG", "EDITOR", "VISUAL"},
 			},
+			Files: []File{{Local: ".bashrc", Remote: ".bashrc"}},
 		},
 		Servers: []ServerConfig{{Host: "localhost", Port: 22}},
 	}

@@ -6,6 +6,9 @@ global:
     - LANG
     - EDITOR
     - VISUAL
+  files:
+  - local: .bashrc
+    remote: .bashrc
 servers:
 - host: localhost
   port: 22

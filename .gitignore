@@ -16,3 +16,6 @@
 
 # Binaries
 envssh
+
+# Log file
+envssh.log

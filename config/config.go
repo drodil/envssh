@@ -35,7 +35,7 @@ type Config struct {
 
 func (config *Config) GetServerConfig(remote *util.Remote) *ServerConfig {
 	for _, conf := range config.Servers {
-		if conf.Host == remote.Hostname && conf.Port == remote.Port {
+		if conf.Host == remote.Hostname {
 			return &conf
 		}
 	}
