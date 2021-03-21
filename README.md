@@ -26,10 +26,7 @@ TODO
 	* Environment variables to move
 		* Wildcard for all env variables f.eg. [*] though it should skip
 		  defaults such as PATH, PWTD...
-	* Configuration files to move
-		* For example vim/bash/...
 	* PTY term
-    * Use port from config file for server
 	* Clean up / not to clean up after disconnect
 	* Automatic installation of packages on connect (have to think about this..
 	  requires sudo and checking package manager type etc.)
@@ -52,7 +49,6 @@ TODO
 	* Private key authentication
 	* SSHAgent support
 	* Improve and test moving files to/from remote
-	* Running commands
 	* Getting env variable(s) from remote
 * Session clean up
 	* When connection is closed, the user configuration files can be cleaned
