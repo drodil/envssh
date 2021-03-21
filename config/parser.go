@@ -6,20 +6,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/drodil/envssh/util"
 	"gopkg.in/yaml.v2"
 )
 
-// TODO: Move to util
-func fileExists(filename string) bool {
-	stat, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return !stat.IsDir()
-}
-
 func ParseConfig(location string) (*Config, error) {
-	if !fileExists(location) {
+	if !util.FileExists(location) {
 		fmt.Println("enssh configuration missing, creating default to", location)
 		err := CreateDefaultConfigFile(location)
 		if err != nil {
@@ -56,7 +48,8 @@ func CreateDefaultConfigFile(location string) error {
 				Static: map[string]string{"LC_ENVSSH": "1"},
 				Moved:  []string{"LANG", "EDITOR", "VISUAL"},
 			},
-			Files: []File{{Local: ".bashrc", Remote: ".bashrc"}},
+			Files:    []File{{Local: ".bashrc", Remote: ".bashrc"}},
+			Commands: []string{"export ENVSSH=1"},
 		},
 		Servers: []ServerConfig{{Host: "localhost", Port: 22}},
 	}

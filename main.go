@@ -8,6 +8,8 @@ import (
 	"github.com/drodil/envssh/util"
 )
 
+var logger = util.GetLogger()
+
 func main() {
 
 	// TODO: Move handling of params to own function
@@ -57,8 +59,22 @@ func main() {
 
 func setUpRemote(client *ssh.Client, config *config.Config, remote *util.Remote) error {
 	client.SetRemoteEnvMap(config.GetEnvironmentVariablesForRemote(remote))
+
 	for _, file := range config.GetFilesForRemote(remote) {
+		// TODO: Make this configurable?
+		if !util.FileExists(file.Local) {
+			logger.Println("Local file", file.Local, "missing, skipping copy to remote")
+			continue
+		}
+
 		err := client.CopyFileToRemote(file.Local, file.Remote)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, cmd := range config.GetCommandsForRemote(remote) {
+		err := client.RunCommand(cmd)
 		if err != nil {
 			return err
 		}

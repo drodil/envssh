@@ -103,6 +103,7 @@ func (client *Client) CopyFileToRemote(localFile string, remoteFile string) erro
 	}
 	encoded := base64.StdEncoding.EncodeToString(content)
 
+	logger.Println("Copying file", localFile, "to remote", remoteFile)
 	cmd := fmt.Sprint("echo '", encoded, "' | base64 --decode > ", remoteFile)
 	return client.RunCommand(cmd)
 }

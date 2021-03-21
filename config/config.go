@@ -17,15 +17,17 @@ type File struct {
 }
 
 type ServerConfig struct {
-	Host  string       `yaml:"host"`
-	Port  uint8        `yaml:"port"`
-	Env   EnvVariables `yaml:"env"`
-	Files []File       `yaml:"files"`
+	Host     string       `yaml:"host"`
+	Port     uint8        `yaml:"port"`
+	Env      EnvVariables `yaml:"env"`
+	Files    []File       `yaml:"files"`
+	Commands []string     `yaml:"commands"`
 }
 
 type GlobalConfig struct {
-	Env   EnvVariables `yaml:"env"`
-	Files []File       `yaml:"files"`
+	Env      EnvVariables `yaml:"env"`
+	Files    []File       `yaml:"files"`
+	Commands []string     `yaml:"commands"`
 }
 
 type Config struct {
@@ -40,6 +42,16 @@ func (config *Config) GetServerConfig(remote *util.Remote) *ServerConfig {
 		}
 	}
 	return nil
+}
+
+func (config *Config) GetCommandsForRemote(remote *util.Remote) []string {
+	ret := make([]string, len(config.Global.Commands))
+	copy(ret, config.Global.Commands)
+	serverConf := config.GetServerConfig(remote)
+	if serverConf != nil {
+		ret = append(ret, serverConf.Commands...)
+	}
+	return ret
 }
 
 func (config *Config) GetFilesForRemote(remote *util.Remote) []File {
