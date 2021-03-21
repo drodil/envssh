@@ -35,6 +35,7 @@ type Config struct {
 	Servers []ServerConfig `yaml:"servers"`
 }
 
+// Gets server specific config based on hostname if it exists in the Config struct.
 func (config *Config) GetServerConfig(remote *util.Remote) *ServerConfig {
 	for _, conf := range config.Servers {
 		if conf.Host == remote.Hostname {
@@ -44,6 +45,7 @@ func (config *Config) GetServerConfig(remote *util.Remote) *ServerConfig {
 	return nil
 }
 
+// Returns list of commands to run on remote.
 func (config *Config) GetCommandsForRemote(remote *util.Remote) []string {
 	ret := make([]string, len(config.Global.Commands))
 	copy(ret, config.Global.Commands)
@@ -54,6 +56,7 @@ func (config *Config) GetCommandsForRemote(remote *util.Remote) []string {
 	return ret
 }
 
+// Returns list of files that are transferred to remote.
 func (config *Config) GetFilesForRemote(remote *util.Remote) []File {
 	ret := make([]File, len(config.Global.Files))
 	copy(ret, config.Global.Files)
@@ -66,6 +69,7 @@ func (config *Config) GetFilesForRemote(remote *util.Remote) []File {
 	return ret
 }
 
+// Returns list of environment variables that are set to remote.
 func (config *Config) GetEnvironmentVariablesForRemote(remote *util.Remote) map[string]string {
 	ret := make(map[string]string)
 	for name, value := range config.Global.Env.Static {

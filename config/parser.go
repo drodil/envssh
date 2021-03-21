@@ -10,6 +10,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Parses sshenv configuration from given location. Creates new
+// default configuration to the location if it does not exist.
 func ParseConfig(location string) (*Config, error) {
 	if !util.FileExists(location) {
 		fmt.Println("enssh configuration missing, creating default to", location)
@@ -32,6 +34,7 @@ func ParseConfig(location string) (*Config, error) {
 	return c, nil
 }
 
+// Returns default envssh configuration location.
 func GetDefaultConfigLocation() string {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -41,6 +44,7 @@ func GetDefaultConfigLocation() string {
 	return filepath.Join(homeDir, ".ssh", "envssh.yml")
 }
 
+// Creates default configuration to given location.
 func CreateDefaultConfigFile(location string) error {
 	def := &Config{
 		Global: GlobalConfig{

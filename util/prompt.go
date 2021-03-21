@@ -10,7 +10,7 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-func StringInSlice(a string, list []string) bool {
+func stringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {
 			return true
@@ -19,6 +19,8 @@ func StringInSlice(a string, list []string) bool {
 	return false
 }
 
+// Prompt user an answer that is in the allowed slice. Returns default in case
+// user hits enter.
 func PromptAllowedString(question string, allowed []string, def string) string {
 	var answer string
 	var err error
@@ -36,7 +38,7 @@ func PromptAllowedString(question string, allowed []string, def string) string {
 			break
 		}
 
-		if !StringInSlice(answer, allowed) {
+		if !stringInSlice(answer, allowed) {
 			allowedStr := strings.Join(allowed, "', ")
 			question = fmt.Sprint("Please type '", allowedStr, "':")
 		}
@@ -47,6 +49,8 @@ func PromptAllowedString(question string, allowed []string, def string) string {
 	return answer
 }
 
+// Prompt password from user with given question.
+// Password is not shown in terminal.
 func PromptPassword(question string) string {
 	fmt.Print(question, " ")
 	stdIn := int(syscall.Stdin)

@@ -14,6 +14,7 @@ type Logger struct {
 var logger *Logger
 var once sync.Once
 
+// Creates singleton logger for envssh.
 func GetLogger() *Logger {
 	once.Do(func() {
 		logger = createLogger("envssh.log")

@@ -12,6 +12,8 @@ type Remote struct {
 	Port     uint8
 }
 
+// Parse SSH remote from string. Takes into account username before last
+// @ character and port after : character.
 func ParseRemote(str string) *Remote {
 	var port uint8
 	port = 22
@@ -34,6 +36,7 @@ func ParseRemote(str string) *Remote {
 	return &Remote{Username: username, Hostname: hostname, Port: port}
 }
 
+// Returns hostname:port presentation of Remote.
 func (remote *Remote) ToAddress() string {
 	return fmt.Sprint(remote.Hostname, ":", strconv.Itoa(int(remote.Port)))
 }

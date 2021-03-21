@@ -181,7 +181,7 @@ func (client *Client) StartInteractiveSession() error {
 		return err
 	}
 
-	// Handle resize
+	// Handle terminal resize
 	ch := make(chan os.Signal, 0)
 	signal.Notify(ch, ResizeEvent)
 	go func() {
@@ -197,6 +197,7 @@ func (client *Client) StartInteractiveSession() error {
 		}
 	}()
 
+	// Wait until connection closes.
 	if err := session.Wait(); err != nil {
 		if e, ok := err.(*ssh.ExitError); ok {
 			switch e.ExitStatus() {
