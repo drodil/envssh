@@ -1,59 +1,38 @@
-# envssh
+# envssh - Take your environment with you
 
 Environment (friendly) SSH client.
 
-Brings your environment with you to the remote machine.
+Brings your environment with you to the remote machine including 
+environment variables, configuration files and other.
 
 ## Installing
 
-TODO
+```bash
+go get -u github.com/drodil/envssh
+```
 
 ## Configuration
 
-TODO
+Configuration file is created automatically to $HOME/.ssh/envssh.yml. 
+The file contains the following sections:
+
+* global - Global level configuration which can be overriden per hostname
+	* env - Environment variables to move to the remote 
+		* static - Key-value pairs that are moved to the remote
+		* moved - Keys from current environment that are evaluated and moved
+	* files - List of files that are moved from local to the remote, each containing:
+		* local - Local path of the file to move
+		* remote - Destination path on the remote
+	* commands - List of commands that are run on remote before starting the session
+* servers - Server specific configurations that override the global ones based on hostname
+	* host - Hostname of the remote
+	* port - Port that is used to connect to remote
+	* env - See above
+	* files - See above
+	* commands - See above
+
+See example configuration file [envssh.yml](envssh.yml)
 
 ## Contributing
 
-TODO
-
-## TODO
-
-*More todos in the code!*
-
-*Should be moved to be github issues instead*
-
-* Configuration file support
-	* Environment variables to move
-		* Wildcard for all env variables f.eg. [*] though it should skip
-		  defaults such as PATH, PWTD...
-	* PTY term
-	* Clean up / not to clean up after disconnect
-	* Automatic installation of packages on connect (have to think about this..
-	  requires sudo and checking package manager type etc.)
-* Support for ~/.ssh/config
-	* Use possible SSH configs from there in connections
-	* Tunneling/proxy/etc.?
-* More CLI options
-	* Log file
-	* Identity file
-	* Port
-	* Command to run instead starting session
-	* To clean up/not to clean up after disconnect
-	* Other useful options from plain ssh
-	* Self-extraction on/off
-* SSH client
-	* envssh self-extraction to remote
-		* Including config file
-		* This to allow jumping from server to server and getting all stuff with
-		  you all the time
-	* Private key authentication
-	* SSHAgent support
-	* Improve and test moving files to/from remote
-	* Getting env variable(s) from remote
-* Session clean up
-	* When connection is closed, the user configuration files can be cleaned
-	* Requires making backups of existing config files if any on remote and
-	  restoring the backups
-* Other things
-	* Add more (first) tests
-
+See [CONTRIBUTING.md](CONTRIBUTING.md).
