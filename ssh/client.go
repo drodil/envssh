@@ -20,11 +20,11 @@ import (
 type Client struct {
 	sshClient    *ssh.Client
 	envVariables map[string]string
-	remote       Remote
+	remote       *util.Remote
 }
 
 // Connects to remote with given network, address and client configuration.
-func Connect(network string, remoteAddr *Remote, config *ssh.ClientConfig) (*Client, error) {
+func Connect(network string, remoteAddr *util.Remote, config *ssh.ClientConfig) (*Client, error) {
 	config.HostKeyCallback = checkHostKey
 
 	client, err := ssh.Dial(network, remoteAddr.ToAddress(), config)
@@ -35,7 +35,7 @@ func Connect(network string, remoteAddr *Remote, config *ssh.ClientConfig) (*Cli
 	return &Client{
 		sshClient:    client,
 		envVariables: make(map[string]string),
-		remote:       *remoteAddr,
+		remote:       remoteAddr,
 	}, nil
 }
 
@@ -44,7 +44,7 @@ func Connect(network string, remoteAddr *Remote, config *ssh.ClientConfig) (*Cli
 // TODO: Add support for auto connect with first available AuthMethod (sshagent, key, password)
 
 // Connects to the remote with given username. Prompts user for password.
-func ConnectWithPassword(remote *Remote) (*Client, error) {
+func ConnectWithPassword(remote *util.Remote) (*Client, error) {
 	// TODO: Add support to retry password input
 	question := fmt.Sprint(remote.Username, "@", remote.Hostname, "'s password:")
 	password := util.PromptPassword(question)
@@ -103,6 +103,14 @@ func (client *Client) CopyFileFromRemote(remoteFile string, localFile string) er
 // interactive session is started with StartInteractiveSession.
 func (client *Client) SetRemoteEnv(name string, value string) {
 	client.envVariables[name] = value
+}
+
+// Sets remote environment variables from map that will be set when
+// interactive session is started with StartInteractiveSession.
+func (client *Client) SetRemoteEnvMap(envVariables map[string]string) {
+	for name, value := range envVariables {
+		client.envVariables[name] = value
+	}
 }
 
 // Starts interactive session with the remote.

@@ -2,32 +2,12 @@ package config
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"gopkg.in/yaml.v2"
 )
-
-// TODO: Move these to config.go
-type EnvVariables struct {
-	Static map[string]string `yaml:"static"`
-	Moved  []string          `yaml:"moved"`
-}
-
-type ServerConfig struct {
-	Host string       `yaml:"host"`
-	Port int          `yaml:"port"`
-	Env  EnvVariables `yaml:"env"`
-}
-
-type GlobalConfig struct {
-	Env EnvVariables `yaml:"env"`
-}
-
-type Config struct {
-	Global  GlobalConfig   `yaml:"global"`
-	Servers []ServerConfig `yaml:"servers"`
-}
 
 // TODO: Move to util
 func fileExists(filename string) bool {
@@ -77,7 +57,7 @@ func CreateDefaultConfigFile(location string) error {
 				Moved:  []string{"LANG", "EDITOR", "VISUAL"},
 			},
 		},
-		Servers: []ServerConfig{ServerConfig{Host: "localhost", Port: 22}},
+		Servers: []ServerConfig{{Host: "localhost", Port: 22}},
 	}
 
 	d, err := yaml.Marshal(&def)

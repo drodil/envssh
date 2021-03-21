@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"os"
 
 	"github.com/drodil/envssh/config"
 	"github.com/drodil/envssh/ssh"
@@ -17,7 +16,7 @@ func main() {
 	flag.Parse()
 
 	destination := flag.Arg(0)
-	remote := ssh.ParseRemote(destination)
+	remote := util.ParseRemote(destination)
 	if remote.Username == "" {
 		remote.Username = *username
 	}
@@ -37,23 +36,10 @@ func main() {
 		panic(err)
 	}
 
-	setEnvFromConfig(client, config)
+	client.SetRemoteEnvMap(config.GetEnvironmentVariablesForRemote(remote))
 	err = client.StartInteractiveSession()
 	if err != nil {
 		panic(err)
 	}
 	client.Disconnect()
-}
-
-func setEnvFromConfig(client *ssh.Client, config *config.Config) {
-	for name, value := range config.Global.Env.Static {
-		client.SetRemoteEnv(name, value)
-	}
-
-	for _, name := range config.Global.Env.Moved {
-		value, ok := os.LookupEnv(name)
-		if ok {
-			client.SetRemoteEnv(name, value)
-		}
-	}
 }
