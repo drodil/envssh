@@ -5,6 +5,8 @@ Environment (friendly) SSH client.
 Brings your environment with you to the remote machine including 
 environment variables, configuration files and other.
 
+**Note: This is very POC implementation and needs a lot of refactoring and more testing!**
+
 ## Installing
 
 ```bash
