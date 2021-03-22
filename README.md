@@ -2,10 +2,10 @@
 
 Environment (friendly) SSH client.
 
-Brings your environment with you to the remote machine including 
+Brings your environment with you to the remote machine including
 environment variables, configuration files and other.
 
-**Note: This is very POC implementation and needs a lot of refactoring and more testing!**
+**Note: This is POC implementation and needs a lot of refactoring and more testing!**
 
 ## Installing
 
@@ -13,13 +13,30 @@ environment variables, configuration files and other.
 go get -u github.com/drodil/envssh
 ```
 
+## Usage
+
+Tool behaves much like the normal ssh client. To connect to remote, simply run:
+
+```bash
+envssh [remote]
+```
+
+The remote should be either hostname or IP address and can include username and
+port which are used to connect f.eg. user@remote:1234.
+
+On the first run, default configuration file will be created to
+$HOME/.ssh/envssh.yml. See Configuration section for details how to configure
+the tool.
+
+Run `envssh --help` for more options.
+
 ## Configuration
 
-Configuration file is created automatically to $HOME/.ssh/envssh.yml. 
+Configuration file is created automatically to $HOME/.ssh/envssh.yml.
 The file contains the following sections:
 
 * global - Global level configuration which can be overriden per hostname
-	* env - Environment variables to move to the remote 
+	* env - Environment variables to move to the remote
 		* static - Key-value pairs that are moved to the remote
 		* moved - Keys from current environment that are evaluated and moved
 	* files - List of files that are moved from local to the remote, each containing:

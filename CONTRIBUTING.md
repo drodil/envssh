@@ -23,3 +23,8 @@ future.
 When creating pull requests, please test your code and existing features. While
 we do not have automatic tests in place at the moment, it's crucial not to break
 existing functionality.
+
+## Formatting and tests
+
+Please use `go fmt` for all code you are submitting. Tests are also more than
+welcome.
