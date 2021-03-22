@@ -10,6 +10,29 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var DefaultConfig = &Config{
+	Global: GlobalConfig{
+		Env: EnvVariables{
+			Static: map[string]string{"LC_ENVSSH": "1"},
+			Moved:  []string{"LANG", "EDITOR", "VISUAL"},
+		},
+		Files:    []File{{Local: ".bashrc", Remote: ".bashrc"}},
+		Commands: []string{"export ENVSSH=1"},
+	},
+	Servers: []ServerConfig{
+		{
+			Host: "localhost",
+			Port: 22,
+			Env: EnvVariables{
+				Static: map[string]string{},
+				Moved:  []string{},
+			},
+			Files:    []File{},
+			Commands: []string{},
+		},
+	},
+}
+
 // Parses sshenv configuration from given location. Creates new
 // default configuration to the location if it does not exist.
 func ParseConfig(location string) (*Config, error) {
@@ -46,19 +69,7 @@ func GetDefaultConfigLocation() string {
 
 // Creates default configuration to given location.
 func CreateDefaultConfigFile(location string) error {
-	def := &Config{
-		Global: GlobalConfig{
-			Env: EnvVariables{
-				Static: map[string]string{"LC_ENVSSH": "1"},
-				Moved:  []string{"LANG", "EDITOR", "VISUAL"},
-			},
-			Files:    []File{{Local: ".bashrc", Remote: ".bashrc"}},
-			Commands: []string{"export ENVSSH=1"},
-		},
-		Servers: []ServerConfig{{Host: "localhost", Port: 22}},
-	}
-
-	d, err := yaml.Marshal(&def)
+	d, err := yaml.Marshal(&DefaultConfig)
 	if err != nil {
 		return err
 	}
