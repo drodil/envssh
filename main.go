@@ -47,7 +47,7 @@ func main() {
 	client, err := ssh.ConnectWithPassword(remote)
 	if err != nil {
 		logger.Fatal(err)
-		fmt.Println("Disconnected from", remote.Hostname, "port", string(remote.Port))
+		fmt.Println("Disconnected from", remote.Hostname, "port", remote.Port)
 		os.Exit(1)
 	}
 
