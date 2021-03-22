@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"os"
 
 	"github.com/drodil/envssh/config"
 	"github.com/drodil/envssh/ssh"
@@ -27,12 +29,14 @@ func main() {
 	if destination == "" {
 		// TODO: Explain usage better (destination, port, etc.)
 		flag.Usage()
-		return
+		os.Exit(0)
 	}
 
 	config, err := config.ParseConfig(*configFile)
 	if err != nil {
-		panic(err)
+		logger.Fatal(err)
+		fmt.Println("Failed to parse configuration file")
+		os.Exit(1)
 	}
 
 	serverConf := config.GetServerConfig(remote)
@@ -42,17 +46,21 @@ func main() {
 
 	client, err := ssh.ConnectWithPassword(remote)
 	if err != nil {
-		panic(err)
+		logger.Fatal(err)
+		fmt.Println("Disconnected from", remote.Hostname, "port", string(remote.Port))
+		os.Exit(1)
 	}
 
 	err = setUpRemote(client, config, remote)
 	if err != nil {
-		panic(err)
+		logger.Fatal(err)
+		fmt.Println("Connection failed to ", remote.ToAddress(), err)
+		os.Exit(1)
 	}
 
 	err = client.StartInteractiveSession()
 	if err != nil {
-		panic(err)
+		logger.Fatal(err)
 	}
 	client.Disconnect()
 }
