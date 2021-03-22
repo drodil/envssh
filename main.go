@@ -69,13 +69,14 @@ func setUpRemote(client *ssh.Client, config *config.Config, remote *util.Remote)
 	client.SetRemoteEnvMap(config.GetEnvironmentVariablesForRemote(remote))
 
 	for _, file := range config.GetFilesForRemote(remote) {
+		local := os.ExpandEnv(file.Local)
 		// TODO: Make this configurable?
-		if !util.FileExists(file.Local) {
-			logger.Println("Local file", file.Local, "missing, skipping copy to remote")
+		if !util.FileExists(local) {
+			logger.Println("Local file", local, "missing, skipping copy to remote")
 			continue
 		}
 
-		err := client.CopyFileToRemote(file.Local, file.Remote)
+		err := client.CopyFileToRemote(local, file.Remote)
 		if err != nil {
 			return err
 		}

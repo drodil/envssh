@@ -16,7 +16,7 @@ var DefaultConfig = &Config{
 			Static: map[string]string{"LC_ENVSSH": "1"},
 			Moved:  []string{"LANG", "EDITOR", "VISUAL"},
 		},
-		Files:    []File{{Local: ".bashrc", Remote: ".bashrc"}},
+		Files:    []File{{Local: "$HOME/.bashrc", Remote: "$HOME/.bashrc"}},
 		Commands: []string{"export ENVSSH=1"},
 	},
 	Servers: []ServerConfig{

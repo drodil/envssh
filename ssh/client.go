@@ -74,8 +74,9 @@ func (client *Client) RunCommand(cmd string) error {
 		return err
 	}
 
-	logger.Println("Running command on remote {}", cmd)
+	logger.Println("Running command on remote ", cmd)
 	if err := session.Run(cmd); err != nil {
+		logger.Fatal("Failed to run command", err)
 		return err
 	}
 
