@@ -17,6 +17,8 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
+// Client is used to run commands and set up environment
+// variables in the remote.
 type Client struct {
 	sshClient    *ssh.Client
 	envVariables map[string]string
@@ -25,7 +27,7 @@ type Client struct {
 
 var logger = util.GetLogger()
 
-// Connects to remote with given network, address and client configuration.
+// Connect connects to remote with given network, address and client configuration.
 func Connect(network string, remoteAddr *util.Remote, config *ssh.ClientConfig) (*Client, error) {
 	config.HostKeyCallback = checkHostKey
 
@@ -46,7 +48,7 @@ func Connect(network string, remoteAddr *util.Remote, config *ssh.ClientConfig) 
 // TODO: Add support for SSHAgent
 // TODO: Add support for auto connect with first available AuthMethod (sshagent, key, password)
 
-// Connects to the remote with given username. Prompts user for password.
+// ConnectWithPassword connect to the remote and prompts user for password.
 func ConnectWithPassword(remote *util.Remote) (*Client, error) {
 	// TODO: Add support to retry password input
 	question := fmt.Sprint(remote.Username, "@", remote.Hostname, "'s password:")
@@ -60,13 +62,13 @@ func ConnectWithPassword(remote *util.Remote) (*Client, error) {
 	return Connect("tcp", remote, config)
 }
 
-// Disconnects the client.
+// Disconnect disconnects the client.
 func (client *Client) Disconnect() error {
 	fmt.Println("Connection to", client.remote.Hostname, "closed.")
 	return client.sshClient.Close()
 }
 
-// Runs single command in the remote.
+// RunCommand runs single command in the remote.
 func (client *Client) RunCommand(cmd string) error {
 	// TODO: Add support for STDOUT/STDERR
 	session, err := client.sshClient.NewSession()
@@ -83,13 +85,13 @@ func (client *Client) RunCommand(cmd string) error {
 	return nil
 }
 
-// Moves file in remote from location to another.
+// MoveFileAtRemote moves file in remote from location to another.
 func (client *Client) MoveFileAtRemote(from string, to string) error {
 	cmd := fmt.Sprint("mv ", from, " ", to)
 	return client.RunCommand(cmd)
 }
 
-// Copies local file to remote over SSH.
+// CopyFileToRemote copies local file to remote over SSH.
 func (client *Client) CopyFileToRemote(localFile string, remoteFile string) error {
 	// TODO: Find a better way to do this. But not with SCP command.
 	f, err := os.Open(localFile)
@@ -109,7 +111,7 @@ func (client *Client) CopyFileToRemote(localFile string, remoteFile string) erro
 	return client.RunCommand(cmd)
 }
 
-// Copies file from the remote to local over SSH.
+// CopyFileFromRemote copies file from the remote to local over SSH.
 func (client *Client) CopyFileFromRemote(remoteFile string, localFile string) error {
 	// TODO: Find a better way to do this. But not with SCP command.
 	// TODO: This actually won't work. Maybe base64 as first step here but needs stdout from remote.
@@ -117,13 +119,13 @@ func (client *Client) CopyFileFromRemote(remoteFile string, localFile string) er
 	return client.RunCommand(cmd)
 }
 
-// Sets remote environment variable that will be set when
+// SetRemoteEnv sets remote environment variable that will be set when
 // interactive session is started with StartInteractiveSession.
 func (client *Client) SetRemoteEnv(name string, value string) {
 	client.envVariables[name] = value
 }
 
-// Sets remote environment variables from map that will be set when
+// SetRemoteEnvMap sets remote environment variables from map that will be set when
 // interactive session is started with StartInteractiveSession.
 func (client *Client) SetRemoteEnvMap(envVariables map[string]string) {
 	for name, value := range envVariables {
@@ -131,7 +133,7 @@ func (client *Client) SetRemoteEnvMap(envVariables map[string]string) {
 	}
 }
 
-// Starts interactive session with the remote.
+// StartInteractiveSession starts interactive shell session with the remote.
 func (client *Client) StartInteractiveSession() error {
 	session, err := client.sshClient.NewSession()
 	if err != nil {
@@ -288,7 +290,7 @@ func checkHostKey(hostname string, remote net.Addr, key ssh.PublicKey) error {
 		fmt.Print("ECDSA key fingerprint is ", fingerprint, "\n")
 		answer := util.PromptAllowedString("Are you sure you want to continue connecting (yes/no)?", []string{"yes", "no"}, "no")
 		if strings.Compare("yes", answer) != 0 {
-			return errors.New("Host key verification failed.")
+			return errors.New("host key verification failed")
 		}
 		return addHostKey(hostnameWithoutPort, key)
 	}

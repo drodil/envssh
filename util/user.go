@@ -4,7 +4,7 @@ import (
 	"os/user"
 )
 
-// Returns current username or empty if it cannot be
+// GetUsername returns current username or empty if it cannot be
 // fetched from OS.
 func GetUsername() string {
 	user, err := user.Current()

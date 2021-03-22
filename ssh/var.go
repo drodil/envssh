@@ -7,8 +7,8 @@ import (
 	"syscall"
 )
 
-// Fd to get terminal size
+// Fd is file descriptor to get terminal size.
 var Fd int = int(os.Stdin.Fd())
 
-// Terminal resize event
+// ResizeEvent is syscall resize event.
 const ResizeEvent syscall.Signal = syscall.SIGWINCH

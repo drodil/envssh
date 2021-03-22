@@ -19,8 +19,8 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
-// Prompt user an answer that is in the allowed slice. Returns default in case
-// user hits enter.
+// PromptAllowedString prompts user an answer that is in the allowed slice.
+// Returns default in case user gives empty answer.
 func PromptAllowedString(question string, allowed []string, def string) string {
 	var answer string
 	var err error
@@ -49,7 +49,7 @@ func PromptAllowedString(question string, allowed []string, def string) string {
 	return answer
 }
 
-// Prompt password from user with given question.
+// PromptPassword prompts password from user with given question.
 // Password is not shown in terminal.
 func PromptPassword(question string) string {
 	fmt.Print(question, " ")
