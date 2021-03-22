@@ -26,7 +26,6 @@ func ParseRemote(str string) *Remote {
 		str = hostname
 	}
 
-	fmt.Print(str)
 	if strings.Contains(str, ":") {
 		parts := strings.Split(str, ":")
 		hostname = parts[0]

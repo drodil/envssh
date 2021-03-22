@@ -21,15 +21,15 @@ func main() {
 	flag.Parse()
 
 	destination := flag.Arg(0)
-	remote := util.ParseRemote(destination)
-	if remote.Username == "" {
-		remote.Username = *username
-	}
-
 	if destination == "" {
 		// TODO: Explain usage better (destination, port, etc.)
 		flag.Usage()
 		os.Exit(0)
+	}
+
+	remote := util.ParseRemote(destination)
+	if remote.Username == "" {
+		remote.Username = *username
 	}
 
 	config, err := config.ParseConfig(*configFile)
