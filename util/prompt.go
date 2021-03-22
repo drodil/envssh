@@ -7,7 +7,7 @@ import (
 	"strings"
 	"syscall"
 
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 func stringInSlice(a string, list []string) bool {
@@ -40,7 +40,8 @@ func PromptAllowedString(question string, allowed []string, def string) string {
 
 		if !stringInSlice(answer, allowed) {
 			allowedStr := strings.Join(allowed, "', ")
-			question = fmt.Sprint("Please type '", allowedStr, "':")
+			fmt.Print("Please type '", allowedStr, "': ")
+			continue
 		}
 		answer = strings.Replace(strings.Replace(answer, "\r", "", -1), "\n", "", -1)
 		break
@@ -54,10 +55,10 @@ func PromptAllowedString(question string, allowed []string, def string) string {
 func PromptPassword(question string) string {
 	fmt.Print(question, " ")
 	stdIn := int(syscall.Stdin)
-	state, _ := terminal.GetState(stdIn)
-	defer terminal.Restore(stdIn, state)
+	state, _ := term.GetState(stdIn)
+	defer term.Restore(stdIn, state)
 
-	bytePassword, err := terminal.ReadPassword(stdIn)
+	bytePassword, err := term.ReadPassword(stdIn)
 	fmt.Print("\n")
 	if err != nil {
 		return ""

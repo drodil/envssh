@@ -14,7 +14,7 @@ import (
 
 	"github.com/drodil/envssh/util"
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 // Client is used to run commands and set up environment
@@ -153,25 +153,25 @@ func (client *Client) StartInteractiveSession() error {
 	}
 
 	fd := int(Fd)
-	state, err := terminal.MakeRaw(fd)
+	state, err := term.MakeRaw(fd)
 	if err != nil {
 		return err
 	}
-	defer terminal.Restore(fd, state)
+	defer term.Restore(fd, state)
 
-	w, h, err := terminal.GetSize(fd)
+	w, h, err := term.GetSize(fd)
 	if err != nil {
 		// Default to 80x24
 		w = 80
 		h = 24
 	}
 
-	term := os.Getenv("TERM")
-	if term == "" {
-		term = "xterm-256color"
+	termType := os.Getenv("TERM")
+	if termType == "" {
+		termType = "xterm-256color"
 	}
 
-	if err := session.RequestPty(term, h, w, modes); err != nil {
+	if err := session.RequestPty(termType, h, w, modes); err != nil {
 		// TODO: Fallback another PTY?
 		return err
 	}
@@ -185,14 +185,14 @@ func (client *Client) StartInteractiveSession() error {
 	}
 
 	// Handle terminal resize
-	ch := make(chan os.Signal, 0)
+	ch := make(chan os.Signal)
 	signal.Notify(ch, ResizeEvent)
 	go func() {
 		for {
 			s := <-ch
 			switch s {
 			case ResizeEvent:
-				w, h, err = terminal.GetSize(fd)
+				w, h, err = term.GetSize(fd)
 				if err == nil {
 					session.WindowChange(h, w)
 				}
