@@ -10,13 +10,13 @@ import (
 type Remote struct {
 	Username string
 	Hostname string
-	Port     uint8
+	Port     uint16
 }
 
 // ParseRemote parses SSH remote from string. Takes into account username before last
 // @ character and port after : character.
 func ParseRemote(str string) *Remote {
-	var port uint8
+	var port uint16
 	port = 22
 	hostname := str
 	username := ""
@@ -26,12 +26,13 @@ func ParseRemote(str string) *Remote {
 		str = hostname
 	}
 
+	fmt.Print(str)
 	if strings.Contains(str, ":") {
 		parts := strings.Split(str, ":")
 		hostname = parts[0]
-		portConv, err := strconv.ParseUint(parts[1], 10, 8)
+		portConv, err := strconv.ParseUint(parts[1], 10, 16)
 		if err == nil {
-			port = uint8(portConv)
+			port = uint16(portConv)
 		}
 	}
 	return &Remote{Username: username, Hostname: hostname, Port: port}

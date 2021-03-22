@@ -1,10 +1,11 @@
 package config
 
 import (
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var data = `
@@ -55,7 +56,7 @@ func TestParsing(t *testing.T) {
 
 	assert.Equal(t, 1, len(config.Servers), "Server specific config count should be one")
 	assert.Equal(t, "localhost", config.Servers[0].Host, "Hostname of server config should be localhost")
-	assert.Equal(t, uint8(22), config.Servers[0].Port, "Port of server config should be 22")
+	assert.Equal(t, uint16(22), config.Servers[0].Port, "Port of server config should be 22")
 	assert.Equal(t, 1, len(config.Servers[0].Env.Static), "Server specific static env variable count should be one")
 	assert.Equal(t, 1, len(config.Servers[0].Env.Moved), "Server specific moved env variable count should be one")
 }

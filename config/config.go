@@ -22,7 +22,7 @@ type File struct {
 // identified by the host name.
 type ServerConfig struct {
 	Host     string       `yaml:"host"`
-	Port     uint8        `yaml:"port"`
+	Port     uint16        `yaml:"port"`
 	Env      EnvVariables `yaml:"env"`
 	Files    []File       `yaml:"files"`
 	Commands []string     `yaml:"commands"`
