@@ -126,11 +126,21 @@ func (client *Client) Disconnect() error {
 }
 
 // RunCommand runs single command in the remote.
-func (client *Client) RunCommand(cmd string) error {
+func (client *Client) RunCommand(cmd string, stdIn, stdOut, stdErr *os.File) error {
 	// TODO: Add support for STDOUT/STDERR
 	session, err := client.sshClient.NewSession()
 	if err != nil {
 		return err
+	}
+
+	if stdIn != nil {
+		session.Stdin = stdIn
+	}
+	if stdOut != nil {
+		session.Stdout = stdOut
+	}
+	if stdErr != nil {
+		session.Stderr = stdErr
 	}
 
 	logger.Println("Running command on remote ", cmd)
@@ -145,7 +155,7 @@ func (client *Client) RunCommand(cmd string) error {
 // MoveFileAtRemote moves file in remote from location to another.
 func (client *Client) MoveFileAtRemote(from string, to string) error {
 	cmd := fmt.Sprint("mv ", from, " ", to)
-	return client.RunCommand(cmd)
+	return client.RunCommand(cmd, nil, nil, nil)
 }
 
 // CopyFileToRemote copies local file to remote over SSH.
@@ -165,15 +175,33 @@ func (client *Client) CopyFileToRemote(localFile string, remoteFile string) erro
 
 	logger.Println("Copying file", localFile, "to remote", remoteFile)
 	cmd := fmt.Sprint("echo '", encoded, "' | base64 --decode > ", remoteFile)
-	return client.RunCommand(cmd)
+	return client.RunCommand(cmd, nil, nil, nil)
 }
 
 // CopyFileFromRemote copies file from the remote to local over SSH.
 func (client *Client) CopyFileFromRemote(remoteFile string, localFile string) error {
 	// TODO: Find a better way to do this. But not with SCP command.
-	// TODO: This actually won't work. Maybe base64 as first step here but needs stdout from remote.
-	cmd := fmt.Sprint("\"cat ", remoteFile, "\" > ", localFile)
-	return client.RunCommand(cmd)
+	file, err := ioutil.TempFile("", "envsshFileTransfer")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(file.Name())
+
+	cmd := fmt.Sprint("base64 ", remoteFile)
+	err = client.RunCommand(cmd, nil, file, nil)
+	if err != nil {
+		return err
+	}
+	reader := bufio.NewReader(file)
+	content, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+	decoded, err := base64.StdEncoding.DecodeString(string(content))
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(localFile, decoded, 0644)
 }
 
 // SetRemoteEnv sets remote environment variable that will be set when

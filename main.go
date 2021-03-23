@@ -83,7 +83,7 @@ func setUpRemote(client *ssh.Client, config *config.Config, remote *util.Remote)
 	}
 
 	for _, cmd := range config.GetCommandsForRemote(remote) {
-		err := client.RunCommand(cmd)
+		err := client.RunCommand(cmd, nil, nil, nil)
 		if err != nil {
 			return err
 		}
