@@ -14,6 +14,7 @@ import (
 
 	"github.com/drodil/envssh/util"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/term"
 )
 
@@ -45,8 +46,51 @@ func Connect(network string, remoteAddr *util.Remote, config *ssh.ClientConfig) 
 }
 
 // TODO: Add support for private key authentication
-// TODO: Add support for SSHAgent
-// TODO: Add support for auto connect with first available AuthMethod (sshagent, key, password)
+
+// ConnectAuto tries to connect with all available methods.
+// The sequence is SSH Agent, public key, password
+func ConnectAuto(remote *util.Remote) (*Client, error) {
+	authMethods := []ssh.AuthMethod{}
+	sshAgent := getSshAgent()
+	if sshAgent != nil {
+		authMethods = append(authMethods, sshAgent)
+	}
+
+	config := &ssh.ClientConfig{
+		User: remote.Username,
+		Auth: authMethods,
+	}
+
+	client, err := Connect("tcp", remote, config)
+	if err == nil {
+		return client, nil
+	}
+	return ConnectWithPassword(remote)
+}
+
+func getSshAgent() ssh.AuthMethod {
+	if sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
+		return ssh.PublicKeysCallback(agent.NewClient(sshAgent).Signers)
+	}
+	return nil
+}
+
+// ConnectWithSshAgent tries to connect to remote using sshagent. Only
+// available on unix systems.
+func ConnectWithSshAgent(remote *util.Remote) (*Client, error) {
+	authMethods := []ssh.AuthMethod{}
+	sshAgent := getSshAgent()
+	if sshAgent != nil {
+		authMethods = append(authMethods, sshAgent)
+	}
+
+	config := &ssh.ClientConfig{
+		User: remote.Username,
+		Auth: authMethods,
+	}
+
+	return Connect("tcp", remote, config)
+}
 
 func promptPassword(remote *util.Remote) ssh.AuthMethod {
 	question := fmt.Sprint(remote.Username, "@", remote.Hostname, "'s password:")
