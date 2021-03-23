@@ -48,18 +48,31 @@ func Connect(network string, remoteAddr *util.Remote, config *ssh.ClientConfig) 
 // TODO: Add support for SSHAgent
 // TODO: Add support for auto connect with first available AuthMethod (sshagent, key, password)
 
-// ConnectWithPassword connect to the remote and prompts user for password.
-func ConnectWithPassword(remote *util.Remote) (*Client, error) {
-	// TODO: Add support to retry password input
+func promptPassword(remote *util.Remote) ssh.AuthMethod {
 	question := fmt.Sprint(remote.Username, "@", remote.Hostname, "'s password:")
 	password := util.PromptPassword(question)
-	config := &ssh.ClientConfig{
-		User: remote.Username,
-		Auth: []ssh.AuthMethod{
-			ssh.Password(password),
-		},
+	return ssh.Password(password)
+}
+
+// ConnectWithPassword connect to the remote and prompts user for password.
+func ConnectWithPassword(remote *util.Remote) (*Client, error) {
+	var err error
+	var client *Client
+
+	for i := 0; i < 3; i++ {
+		config := &ssh.ClientConfig{
+			User: remote.Username,
+			Auth: []ssh.AuthMethod{
+				promptPassword(remote),
+			},
+		}
+		client, err = Connect("tcp", remote, config)
+		if err == nil {
+			return client, nil
+		}
+		fmt.Println("Permission denied, please try again.")
 	}
-	return Connect("tcp", remote, config)
+	return nil, err
 }
 
 // Disconnect disconnects the client.
