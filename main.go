@@ -12,40 +12,19 @@ import (
 
 var logger = util.GetLogger()
 
+type args struct {
+	username    string
+	configFile  string
+	port        uint
+	destination string
+	cmd         string
+}
+
 func main() {
+	args := parseArgs()
+	remote := parseRemote(&args)
 
-	// TODO: Move handling of params to own function
-	username := flag.String("l", util.GetUsername(), "Login username")
-	configFile := flag.String("c", config.GetDefaultConfigLocation(), "envssh configuration file")
-	port := flag.Uint("p", 22, "Port to connect to")
-
-	flag.Parse()
-
-	destination := flag.Arg(0)
-	if destination == "" {
-		// TODO: Explain usage better (destination, port, etc.)
-		flag.Usage()
-		os.Exit(0)
-	}
-
-	cmd := ""
-	nArgs := flag.NArg()
-	if nArgs > 1 {
-		for i := 1; i < nArgs; i++ {
-			cmd = fmt.Sprint(cmd, " ", flag.Arg(i))
-		}
-	}
-
-	remote := util.ParseRemote(destination)
-	if remote.Username == "" {
-		remote.Username = *username
-	}
-
-	if *port != uint(22) {
-		remote.Port = uint16(*port)
-	}
-
-	config, err := config.ParseConfig(*configFile)
+	config, err := config.ParseConfig(args.configFile)
 	if err != nil {
 		logger.Fatal(err)
 		fmt.Println("Failed to parse configuration file")
@@ -74,18 +53,60 @@ func main() {
 		os.Exit(1)
 	}
 
-	if cmd == "" {
+	if args.cmd == "" {
 		err = client.StartInteractiveSession()
 		if err != nil {
 			logger.Fatal(err)
 		}
 	} else {
-		err = client.RunCommand(cmd, nil, os.Stdout, os.Stderr)
+		err = client.RunCommand(args.cmd, nil, os.Stdout, os.Stderr)
 		if err != nil {
 			logger.Fatal(err)
 		}
 	}
 	client.Disconnect()
+}
+
+func parseArgs() args {
+	username := flag.String("l", util.GetUsername(), "Login username")
+	configFile := flag.String("c", config.GetDefaultConfigLocation(), "envssh configuration file")
+	port := flag.Uint("p", 22, "Port to connect to")
+
+	flag.Parse()
+
+	destination := flag.Arg(0)
+	if destination == "" {
+		// TODO: Explain usage better (destination, port, etc.)
+		flag.Usage()
+		os.Exit(0)
+	}
+
+	cmd := ""
+	nArgs := flag.NArg()
+	if nArgs > 1 {
+		for i := 1; i < nArgs; i++ {
+			cmd = fmt.Sprint(cmd, " ", flag.Arg(i))
+		}
+	}
+	return args{
+		*username,
+		*configFile,
+		*port,
+		destination,
+		cmd,
+	}
+}
+
+func parseRemote(args *args) *util.Remote {
+	remote := util.ParseRemote(args.destination)
+	if remote.Username == "" {
+		remote.Username = args.username
+	}
+
+	if args.port != uint(22) {
+		remote.Port = uint16(args.port)
+	}
+	return remote
 }
 
 func setUpRemote(client *ssh.Client, config *config.Config, remote *util.Remote) error {
