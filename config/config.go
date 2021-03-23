@@ -22,7 +22,8 @@ type File struct {
 // identified by the host name.
 type ServerConfig struct {
 	Host     string       `yaml:"host"`
-	Port     uint16        `yaml:"port"`
+	Port     uint16       `yaml:"port"`
+	Aliases  []string     `yaml:"aliases"`
 	Env      EnvVariables `yaml:"env"`
 	Files    []File       `yaml:"files"`
 	Commands []string     `yaml:"commands"`
@@ -42,10 +43,19 @@ type Config struct {
 	Servers []ServerConfig `yaml:"servers"`
 }
 
+func aliasMatches(host string, config *ServerConfig) bool {
+	for _, alias := range config.Aliases {
+		if host == alias {
+			return true
+		}
+	}
+	return false
+}
+
 // GetServerConfig returns server specific config based on hostname if it exists in the Config struct.
 func (config *Config) GetServerConfig(remote *util.Remote) *ServerConfig {
 	for _, conf := range config.Servers {
-		if conf.Host == remote.Hostname {
+		if conf.Host == remote.Hostname || aliasMatches(remote.Hostname, &conf) {
 			return &conf
 		}
 	}

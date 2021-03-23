@@ -46,6 +46,7 @@ The file contains the following sections:
 * servers - Server specific configurations that override the global ones based on hostname
 	* host - Hostname of the remote
 	* port - Port that is used to connect to remote
+	* aliases - List of aliases for this server, can be used instead hostname in destination
 	* env - See above
 	* files - See above
 	* commands - See above

@@ -53,8 +53,11 @@ func main() {
 	}
 
 	serverConf := config.GetServerConfig(remote)
-	if serverConf != nil && serverConf.Port != 0 {
-		remote.Port = serverConf.Port
+	if serverConf != nil {
+		if serverConf.Port != 0 {
+			remote.Port = serverConf.Port
+		}
+		remote.Hostname = serverConf.Host
 	}
 
 	client, err := ssh.ConnectAuto(remote)

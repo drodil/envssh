@@ -23,8 +23,9 @@ var DefaultConfig = &Config{
 	},
 	Servers: []ServerConfig{
 		{
-			Host: "localhost",
-			Port: 22,
+			Host:    "localhost",
+			Port:    22,
+			Aliases: []string{"127.0.0.1"},
 			Env: EnvVariables{
 				Static: map[string]string{},
 				Moved:  []string{},

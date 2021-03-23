@@ -66,7 +66,11 @@ func TestDefaultConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	os.Remove(file.Name())
+
+	err = os.Remove(file.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	config, err := ParseConfig(file.Name())
 	if err != nil {
