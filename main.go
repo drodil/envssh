@@ -27,6 +27,14 @@ func main() {
 		os.Exit(0)
 	}
 
+	cmd := ""
+	nArgs := flag.NArg()
+	if nArgs > 1 {
+		for i := 1; i < nArgs; i++ {
+			cmd = fmt.Sprint(cmd, " ", flag.Arg(i))
+		}
+	}
+
 	remote := util.ParseRemote(destination)
 	if remote.Username == "" {
 		remote.Username = *username
@@ -58,9 +66,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = client.StartInteractiveSession()
-	if err != nil {
-		logger.Fatal(err)
+	if cmd == "" {
+		err = client.StartInteractiveSession()
+		if err != nil {
+			logger.Fatal(err)
+		}
+	} else {
+		err = client.RunCommand(cmd, nil, os.Stdout, os.Stderr)
+		if err != nil {
+			logger.Fatal(err)
+		}
 	}
 	client.Disconnect()
 }
