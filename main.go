@@ -17,6 +17,7 @@ func main() {
 	// TODO: Move handling of params to own function
 	username := flag.String("l", util.GetUsername(), "Login username")
 	configFile := flag.String("c", config.GetDefaultConfigLocation(), "envssh configuration file")
+	port := flag.Uint("p", 22, "Port to connect to")
 
 	flag.Parse()
 
@@ -38,6 +39,10 @@ func main() {
 	remote := util.ParseRemote(destination)
 	if remote.Username == "" {
 		remote.Username = *username
+	}
+
+	if *port != uint(22) {
+		remote.Port = uint16(*port)
 	}
 
 	config, err := config.ParseConfig(*configFile)

@@ -114,6 +114,11 @@ func ConnectWithPassword(remote *util.Remote) (*Client, error) {
 		if err == nil {
 			return client, nil
 		}
+
+		if err != nil && !strings.Contains(err.Error(), "ssh: unable to authenticate") {
+			return nil, err
+		}
+
 		fmt.Println("Permission denied, please try again.")
 	}
 	return nil, err
