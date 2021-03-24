@@ -30,6 +30,11 @@ the tool.
 
 Run `envssh --help` for more options.
 
+Also check out short demo on Youtube:
+
+[![envssh demo](http://img.youtube.com/vi/x_4UvVzQRNU/0.jpg)](http://www.youtube.com/watch?v=x_4UvVzQRNU "envssh demo")
+
+
 ## Configuration
 
 Configuration file is created automatically to $HOME/.ssh/envssh.yml.
